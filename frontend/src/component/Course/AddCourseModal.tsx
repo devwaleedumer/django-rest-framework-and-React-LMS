@@ -1,0 +1,215 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { FC, useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../../@/components/ui/dialog";
+import { Button } from "../../@/components/ui/button";
+import { Input } from "../../@/components/ui/input";
+import { z } from "zod";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_FILE_SIZE,
+} from "../../utils/options/imageConfiguration";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useAppSelector } from "../../hooks/reduxHooks";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../../@/components/ui/form";
+import { Textarea } from "../../@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../@/components/ui/select";
+import {
+  useCreateCourseMutation,
+  useGetAllClassesQuery,
+  useGetTeacherByUserQuery,
+} from "../../redux/features/course/courseApi";
+import { toast } from "sonner";
+
+type Props = {};
+
+const formSchema = z.object({
+  title: z
+    .string({ message: "title is required" })
+    .min(6, "title must contain minimum 6 character(s)"),
+  description: z
+    .string()
+    .min(8, "description must contain minimum 8 character(s)"),
+  featured_img: z
+    .instanceof(File, { message: "" })
+    .refine((file) => file?.size <= MAX_FILE_SIZE, `Max image size is 4MB.`)
+    .refine(
+      (file) => ACCEPTED_IMAGE_TYPES.includes(file?.type),
+      "Only .jpg, .jpeg, .png and .webp formats are supported."
+    ),
+  teacher: z.number(),
+  category: z.string({ message: "category is required" }),
+});
+
+const AddCourseModal: FC<Props> = () => {
+  // const { data: teacherData } = useGetTeacherByUserQuery(null);
+
+  const { data: classData } = useGetAllClassesQuery(null);
+  const [addCourse, { isLoading, error, data, isSuccess }] =
+    useCreateCourseMutation();
+    const teacherId = useAppSelector((state) => state.user.user.teacherId)
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      featured_img: null,
+      teacher: teacherId,
+      category: '',
+    },
+  });
+  async function onSubmitAsync(values: z.infer<typeof formSchema>) {
+    console.log(data)
+    await addCourse(values);
+    form.reset();
+  }
+
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success("success", {
+        description:`Course ${data.title} created successfully}`,
+      });
+    }
+    if (error) {
+      if ("data" in error) {
+        if ("detail" in error.data) {
+          toast.error(` Error!`, {
+            description: `${error.data.detail}`,
+          });
+          return;
+        }
+        const errorData = error as any;
+        toast.error(` Error, occurred!`, {
+          description: Object.entries(errorData?.data).map(([key, value]) =>
+            value?.map((er, index) => `'${key}' ${er} \r\n`)
+          ),
+        });
+      } else {
+        toast.error(` Error`, {
+          description: "Some thing went wrong, please try again ",
+        });
+      }
+    }
+  }, [error, isSuccess]);
+
+  return (
+    <Dialog >
+      <DialogTrigger asChild>
+        <Button variant="outline">Add Course</Button>
+      </DialogTrigger>
+          <DialogContent className="sm:max-w-[550px]">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit((data) => onSubmitAsync(data))} className="space-y-4 md:space-y-6">
+            <DialogHeader>
+              <DialogTitle>Add Course</DialogTitle>
+              <DialogDescription>Add Course details</DialogDescription>
+            </DialogHeader>
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="course title" type="text" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Description here" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Class</FormLabel>
+                  <Select
+                onValueChange={field.onChange}   defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Class" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {classData?.map((data, index) => (
+                        <SelectItem
+                          key={data?.title + data?.id}
+                          value={`${data?.id}`}
+                        >
+                          {data?.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="featured_img"
+              render={({ field: { onChange, value, ...fieldProps } }) => (
+                <FormItem>
+                  <FormLabel>Profile Picture</FormLabel>
+                  <FormDescription>
+                    SVG, PNG, JPG or GIF (MAX. 800x400px).
+                  </FormDescription>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      {...fieldProps}
+                      onChange={(e) => {
+                        onChange(e.target.files[0]);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+            <Button type="submit" disabled={isLoading}>Create</Button>
+            </DialogFooter>
+        </form>
+      </Form>
+          </DialogContent>
+    </Dialog>
+  );
+};
+
+export default AddCourseModal;

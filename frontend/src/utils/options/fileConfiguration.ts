@@ -1,0 +1,2 @@
+export const MAX_FILE_SIZE = 4000000;
+export const ACCEPTED_File_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", 'application/pdf', 'application/vnd.ms-powerpoint', 'text/plain', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',];

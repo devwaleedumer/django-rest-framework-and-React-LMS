@@ -1,0 +1,49 @@
+
+  .loader-container {
+    --loader-size: 35px;
+    --loader-color: black;
+    --loader-speed: 1s;
+    --loader-stroke: 3.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: var(--loader-size);
+    height: calc(var(--loader-size) * 0.9);
+  }
+
+  .bar {
+    width: var(--loader-stroke);
+    height: 100%;
+    background-color: var(--loader-color);
+    transition: background-color 0.3s ease;
+  }
+
+  .bar:nth-child(1) {
+    animation: grow var(--loader-speed) ease-in-out calc(var(--loader-speed) * -0.45)
+      infinite;
+  }
+
+  .bar:nth-child(2) {
+    animation: grow var(--loader-speed) ease-in-out calc(var(--loader-speed) * -0.3)
+      infinite;
+  }
+
+  .bar:nth-child(3) {
+    animation: grow var(--loader-speed) ease-in-out calc(var(--loader-speed) * -0.15)
+      infinite;
+  }
+
+  .bar:nth-child(4) {
+    animation: grow var(--loader-speed) ease-in-out infinite;
+  }
+
+  @keyframes grow {
+    0%,
+    100% {
+      transform: scaleY(0.3);
+    }
+
+    50% {
+      transform: scaleY(1);
+    }
+  }
